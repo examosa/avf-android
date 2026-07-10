@@ -52,17 +52,55 @@ jobs:
         run: |
           mkdir -p "$KERNEL_DIR_NAME"
           cd "$KERNEL_DIR_NAME"
+
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git config --global user.name 'github-actions[bot]'
+
+          echo '::group::Sync'
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android16-6.12
           repo sync -c -j$(nproc)
+          echo '::endgroup::'
+
+      - name: Restore ccache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ${{ runner.temp }}/ccache
+          key: ccache-kernel-${{ hashFiles('kernel-config.txt') }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-kernel-${{ hashFiles('kernel-config.txt') }}-
+            ccache-kernel-
+
+      - name: Configure ccache
+        run: |
+          ccache_dir="CCACHE_DIR=$RUNNER_TEMP/ccache"
+          export "$ccache_dir"
+          ccache --max-size=5G
+          ccache --zero-stats
+          # Tell ccache to accept calls from the Android prebuilt clang
+          ccache --set-config=compiler_check=content
+          echo "$ccache_dir" >> "$GITHUB_ENV"
+          echo /usr/lib/ccache >> "$GITHUB_PATH"
 
       - name: Build kernel
         working-directory: ${{ env.KERNEL_DIR_NAME }}
         run: |
-          cp -v ../build-kernel.sh ./
-          cp -v ../kernel-config.txt ./original-config-from-phone.txt
+          cp ../build-kernel.sh ./
+          cp ../kernel-config.txt ./original-config-from-phone.txt
+
+          echo '::group::Build'
           bash build-kernel.sh
+          echo '::endgroup::'
+
+      - name: Show ccache stats
+        if: always()
+        run: ccache --show-stats
+
+      - name: Save ccache
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ${{ runner.temp }}/ccache
+          key: ccache-kernel-${{ hashFiles('kernel-config.txt') }}-${{ github.run_id }}
 
       - name: Upload vmlinuz artifact
         uses: actions/upload-artifact@v4
