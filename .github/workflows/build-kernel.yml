@@ -116,7 +116,7 @@ jobs:
           key: ccache-kernel-${{ hashFiles('kernel-config.txt') }}-${{ github.run_id }}
 
       - name: Upload vmlinuz artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: vmlinuz-docker
           path: ${{ env.KERNEL_DIR_NAME }}/vmlinuz
