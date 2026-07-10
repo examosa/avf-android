@@ -1,0 +1,13 @@
+--- build-kernel.sh
++++ build-kernel.sh
+@@ -33,6 +33,10 @@
+     O="${OUT_DIR}"
+     ARCH="${ARCH}"
+     LLVM="${LLVM}"
++    CC="ccache ${CLANG_DIR}/clang"
++    CXX="ccache ${CLANG_DIR}/clang++"
++    HOSTCC="ccache ${CLANG_DIR}/clang"
++    HOSTCXX="ccache ${CLANG_DIR}/clang++"
+     LLVM_IAS=1
+     RUSTC="${RUST_DIR}/rustc"
+     BINDGEN="${BINDGEN}"
