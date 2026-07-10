@@ -16,7 +16,9 @@ jobs:
 
       - name: Free up disk space
         run: |
-          echo 'ℹ Removing unnecessary packages and files to free disk space…'
+          echo '::notice::Removing unnecessary packages and files to free disk space…'
+
+          echo '::group::Cleanup'
 
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
             /opt/hostedtoolcache /usr/local/share/boost /usr/local/graalvm \
@@ -26,7 +28,9 @@ jobs:
           sudo apt-get autoremove -y '^dotnet-.*' '^llvm-.*' 'php.*' azure-cli google-chrome-stable \
             firefox powershell mono-devel || :
 
-          echo 'ℹ Disk space after cleanup:'
+          echo '::endgroup::'
+
+          echo '::notice::Disk space after cleanup'
           df -h /
 
       - name: Install dependencies
