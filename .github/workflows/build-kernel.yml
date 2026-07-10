@@ -37,7 +37,16 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -U -y bc bison build-essential cpio dwarves flex \
-            libdw-dev libelf-dev libssl-dev lz4 python3 python3-pip wget git repo
+            libdw-dev libelf-dev libssl-dev lz4 python3 python3-pip wget git
+
+          readonly bin_dir="$HOME/.local/bin"
+
+          curl --create-dirs --fail --output-dir "$bin_dir" \
+            --remote-name https://storage.googleapis.com/git-repo-downloads/repo
+
+          chmod a+x "$bin_dir/repo"
+
+          echo "$bin_dir" >> "$GITHUB_PATH"
 
       - name: Clone kernel source with repo
         run: |
