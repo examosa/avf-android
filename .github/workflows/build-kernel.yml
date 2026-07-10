@@ -1,12 +1,6 @@
 name: Build AVF Guest Kernel
 
-on:
-  workflow_dispatch:
-    inputs:
-      kernel_config:
-        description: 'Contents of original-config-from-phone.txt (kernel config extracted from the VM via zcat /proc/config.gz)'
-        required: true
-        type: string
+on: workflow_dispatch
 
 env:
   KERNEL_DIR_NAME: android16-guest-kernel
@@ -14,7 +8,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 90
 
     steps:
       - name: Checkout repository
@@ -22,20 +16,23 @@ jobs:
 
       - name: Free up disk space
         run: |
-          echo "==> Removing unnecessary packages and files to free disk space…"
+          echo 'ℹ Removing unnecessary packages and files to free disk space…'
+
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
             /opt/hostedtoolcache /usr/local/share/boost /usr/local/graalvm \
             /usr/local/share/chromium /usr/local/.ghcup /usr/share/swift \
             /usr/local/julia* /usr/lib/jvm /opt/microsoft /opt/az
+
           sudo apt-get autoremove -y '^dotnet-.*' '^llvm-.*' 'php.*' azure-cli google-chrome-stable \
             firefox powershell mono-devel || :
-          echo "==> Disk space after cleanup:"
+
+          echo 'ℹ Disk space after cleanup:'
           df -h /
 
       - name: Install dependencies
         run: |
-          sudo apt-get install -U -y bc bison build-essential cpio flex libelf-dev libssl-dev \
-            lz4 python3 python3-pip wget git repo
+          sudo apt-get install -U -y bc bison build-essential cpio flex \
+            libelf-dev libssl-dev lz4 python3 python3-pip wget git repo
 
       - name: Clone kernel source with repo
         run: |
@@ -46,14 +43,11 @@ jobs:
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android16-6.12
           repo sync -c -j$(nproc)
 
-      - name: Write kernel config from input
-        run: |
-          echo "${{ inputs.kernel_config }}" > "$KERNEL_DIR_NAME/original-config-from-phone.txt"
-
       - name: Build kernel
         working-directory: ${{ env.KERNEL_DIR_NAME }}
         run: |
-          cp ../build-kernel.sh ./
+          cp -v ../build-kernel.sh ./
+          cp -v ../kernel-config.txt ./original-config-from-phone.txt
           bash build-kernel.sh
 
       - name: Upload vmlinuz artifact
