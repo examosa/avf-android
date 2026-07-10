@@ -45,10 +45,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get install -U -y bc bison build-essential cpio flex \
+          echo '::group::apt'
+
+          sudo apt-get install -U -y bc bison build-essential ccache cpio flex \
             libdw-dev libelf-dev libssl-dev lz4 python3 python3-pip wget git
 
-          echo '::notice::Installing repo'
+          echo '::endgroup::'
+
+          echo '::group::repo'
 
           readonly bin_dir="$HOME/.local/bin"
 
@@ -59,16 +63,21 @@ jobs:
 
           echo "$bin_dir" >> "$GITHUB_PATH"
 
-          echo '::notice::Installing pahole'
+          echo '::endgroup::'
 
-          git clone --branch v1.31 --depth 1 --{recurse,shallow}-submodules https://kernel.googlesource.com/pub/scm/devel/pahole/pahole.git
+          echo '::group::pahole'
+
+          readonly pahole_tag=v1.31
+          GIT_ADVICE=0 git clone --branch "$pahole_tag" --depth 1 --{recurse,shallow}-submodules https://kernel.googlesource.com/pub/scm/devel/pahole/pahole.git
           cd pahole
           mkdir build
           cd build
           cmake -DCMAKE_INSTALL_PREFIX=/usr ..
           make -j$(nproc)
           sudo make install
-          pahole --version
+          test "$(pahole --version)" = "$pahole_tag"
+
+          echo '::endgroup::'
 
       - name: Clone kernel source with repo
         run: |
