@@ -1,0 +1,87 @@
+name: Build AVF Guest Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_config:
+        description: 'Contents of original-config-from-phone.txt (kernel config extracted from the VM via zcat /proc/config.gz)'
+        required: true
+        type: string
+
+env:
+  KERNEL_DIR_NAME: android16-guest-kernel
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          echo "==> Removing unnecessary packages and files to free disk space..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/graalvm
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/julia*
+          sudo rm -rf /usr/lib/jvm
+          sudo rm -rf /opt/microsoft
+          sudo rm -rf /opt/az
+          sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' 'php.*' azure-cli google-chrome-stable \
+            firefox powershell mono-devel || true
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          echo "==> Disk space after cleanup:"
+          df -h /
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential cpio flex libelf-dev libssl-dev \
+            lz4 python3 python3-pip wget git
+
+      - name: Install repo tool
+        run: |
+          mkdir -p ~/bin
+          curl -s https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Clone kernel source with repo
+        run: |
+          mkdir -p ${{ env.KERNEL_DIR_NAME }}
+          cd ${{ env.KERNEL_DIR_NAME }}
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+          ~/bin/repo init -u https://android.googlesource.com/kernel/manifest -b common-android16-6.12
+          ~/bin/repo sync -c -j$(nproc)
+
+      - name: Write kernel config from input
+        run: |
+          echo "${{ inputs.kernel_config }}" > ${{ env.KERNEL_DIR_NAME }}/original-config-from-phone.txt
+
+      - name: Copy build script into kernel tree
+        run: |
+          cp build-kernel.sh ${{ env.KERNEL_DIR_NAME }}/
+          chmod +x ${{ env.KERNEL_DIR_NAME }}/build-kernel.sh
+
+      - name: Build kernel
+        run: |
+          cd ${{ env.KERNEL_DIR_NAME }}
+          ./build-kernel.sh
+
+      - name: Upload vmlinuz artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vmlinuz-docker
+          path: ${{ env.KERNEL_DIR_NAME }}/vmlinuz
+          if-no-files-found: error
