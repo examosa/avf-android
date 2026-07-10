@@ -23,60 +23,42 @@ jobs:
       - name: Free up disk space
         run: |
           echo "==> Removing unnecessary packages and files to free disk space..."
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf /usr/local/graalvm
-          sudo rm -rf /usr/local/share/chromium
-          sudo rm -rf /usr/local/.ghcup
-          sudo rm -rf /usr/share/swift
-          sudo rm -rf /usr/local/julia*
-          sudo rm -rf /usr/lib/jvm
-          sudo rm -rf /opt/microsoft
-          sudo rm -rf /opt/az
-          sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' 'php.*' azure-cli google-chrome-stable \
-            firefox powershell mono-devel || true
-          sudo apt-get autoremove -y
-          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache /usr/local/share/boost /usr/local/graalvm \
+            /usr/local/share/chromium /usr/local/.ghcup /usr/share/swift \
+            /usr/local/julia* /usr/lib/jvm /opt/microsoft /opt/az
+          sudo apt-get autoremove -y '^dotnet-.*' '^llvm-.*' 'php.*' azure-cli google-chrome-stable \
+            firefox powershell mono-devel || :
           echo "==> Disk space after cleanup:"
           df -h /
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y bc bison build-essential cpio flex libelf-dev libssl-dev \
-            lz4 python3 python3-pip wget git
-
-      - name: Install repo tool
-        run: |
-          mkdir -p ~/bin
-          curl -s https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
+          sudo apt-get install -U -y bc bison build-essential cpio flex libelf-dev libssl-dev \
+            lz4 python3 python3-pip wget git repo
 
       - name: Clone kernel source with repo
         run: |
-          mkdir -p ${{ env.KERNEL_DIR_NAME }}
-          cd ${{ env.KERNEL_DIR_NAME }}
+          KERNEL_DIR="$KERNEL_DIR_NAME"
+          mkdir -p "$KERNEL_DIR"
+          cd "$KERNEL_DIR"
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
-          ~/bin/repo init -u https://android.googlesource.com/kernel/manifest -b common-android16-6.12
-          ~/bin/repo sync -c -j$(nproc)
+          repo init -u https://android.googlesource.com/kernel/manifest -b common-android16-6.12
+          repo sync -c -j$(nproc)
 
       - name: Write kernel config from input
         run: |
-          echo "${{ inputs.kernel_config }}" > ${{ env.KERNEL_DIR_NAME }}/original-config-from-phone.txt
+          echo "${{ inputs.kernel_config }}" > "$KERNEL_DIR_NAME/original-config-from-phone.txt"
 
       - name: Copy build script into kernel tree
         run: |
-          cp build-kernel.sh ${{ env.KERNEL_DIR_NAME }}/
-          chmod +x ${{ env.KERNEL_DIR_NAME }}/build-kernel.sh
+          cp build-kernel.sh "$KERNEL_DIR_NAME/"
+          chmod +x "$KERNEL_DIR_NAME/build-kernel.sh"
 
       - name: Build kernel
         run: |
-          cd ${{ env.KERNEL_DIR_NAME }}
+          cd "$KERNEL_DIR_NAME"
           ./build-kernel.sh
 
       - name: Upload vmlinuz artifact
