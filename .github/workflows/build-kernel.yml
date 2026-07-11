@@ -26,7 +26,7 @@ jobs:
             /usr/local/share/chromium /usr/local/.ghcup /usr/share/swift \
             /usr/local/julia* /usr/lib/jvm /opt/microsoft /opt/az
 
-          sudo apt-get autoremove -Uqy '^dotnet-.*' '^llvm-.*' 'php.*' azure-cli google-chrome-stable \
+          sudo apt-get purge --auto-remove --quiet --yes '^dotnet-.*' '^llvm-.*' 'php.*' azure-cli google-chrome-stable \
             firefox powershell mono-devel || :
 
           echo '::endgroup::'
@@ -38,7 +38,7 @@ jobs:
         run: |
           ccache_dir="CCACHE_DIR=$RUNNER_TEMP/ccache"
           export "$ccache_dir"
-          sudo apt-get install -qy ccache
+          sudo apt-get install --quiet --update --yes ccache
           ccache --max-size=5G
           ccache --zero-stats
           # Tell ccache to accept calls from the Android prebuilt clang
@@ -60,7 +60,7 @@ jobs:
         run: |
           echo '::group::Apt'
 
-          sudo apt-get install -qy bc bison build-essential cpio flex \
+          sudo apt-get install --quiet --yes bc bison build-essential cpio flex \
             libdw-dev libelf-dev libssl-dev lz4 python3 python3-pip wget git
 
           echo '::endgroup::'
