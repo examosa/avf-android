@@ -102,7 +102,7 @@ jobs:
 
           echo '::group::Sync'
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android16-6.12
-          repo sync -c -j$(nproc)
+          repo sync --current-branch --jobs="$(nproc)" --no-tags --optimized-fetch --retry-fetches=3
           echo '::endgroup::'
 
       - name: Build kernel
