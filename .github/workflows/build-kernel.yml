@@ -108,6 +108,7 @@ jobs:
         run: |
           cp ../build-kernel.sh ./
           cp ../kernel-config.txt ./original-config-from-phone.txt
+          patch -p0 build-kernel.sh ../build-kernel.patch
 
           echo '::group::Build'
           bash build-kernel.sh
