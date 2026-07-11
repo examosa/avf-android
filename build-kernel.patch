@@ -4,8 +4,8 @@
      O="${OUT_DIR}"
      ARCH="${ARCH}"
      LLVM="${LLVM}"
-+    CC="ccache ${CLANG_DIR}/clang"
-+    HOSTCC="ccache ${CLANG_DIR}/clang"
++    CC_WRAPPER="${CCACHE_EXEC:-ccache}"
++    HOSTCC_WRAPPER="${CCACHE_EXEC:-ccache}"
 +    KBUILD_BUILD_TIMESTAMP="Thu Jan  1 00:00:00 UTC 1970"
      LLVM_IAS=1
      RUSTC="${RUST_DIR}/rustc"
